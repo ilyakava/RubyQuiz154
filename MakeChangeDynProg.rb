@@ -44,6 +44,29 @@ def best_change(target, coins)
   end
 end
 
+# runs in O(target*len(coins))
+def make_change_itr(target, coins)
+  num_coins = Array.new(target+1) { 0 } # base case is at index 0
+  used_coins = Array.new(target+1) { 0 }
+  1.upto(target) do |idx|
+    # figure out the number of coins it will take in this subproblem using previous subproblems
+    nums = coins.map { |coin| idx >= coin ? num_coins[idx - coin] + 1 : Float::INFINITY }
+    num_coins[idx] = nums.min
+    # save which coin gives best solution to this subproblem
+    coin_idx = nums.index(nums.min)
+    used_coins[idx] = coins[coin_idx]
+  end
+  return "No solution" if num_coins.last == Float::INFINITY
+  # now return the coins used in the whole problem solution by backtracking saved results
+  report = []
+  check_slot = target
+  until check_slot == 0
+    report << used_coins[check_slot]
+    check_slot -= report.last
+  end
+  return report.sort
+end
+
 # A crappy test framework, but this is just for fun so I guess it's okay
 [
   [7,   [3, 1], { 3 => 2, 1 => 1 }  ],
@@ -53,3 +76,14 @@ end
 ].each do |target, coins, solution|
   throw "Bad test for #{target} / #{coins} / #{solution}" unless best_change(target, coins) == solution
 end
+
+[
+  [7,   [3, 1], [1,3,3]                     ],
+  [8,   [4],    [4,4]                       ],
+  [9,   [4],    "No solution"               ],
+  [135, [7, 3], [3,3,3]+Array.new(18) { 7 } ]
+].each do |target, coins, solution|
+  sol = make_change_itr(target, coins)
+  throw "Bad test for #{target} / #{coins} / #{solution}" unless sol == solution
+end
+
